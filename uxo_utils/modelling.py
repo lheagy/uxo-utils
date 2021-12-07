@@ -1,7 +1,7 @@
 import numpy as np
 
 from .data import load_ordnance_dict
-from .imports import (
+from BTInvert import (
     sensorCoords2RxCoords, preCalcLoopCorners, FModParam, Model, forwardWithQ
 )
 

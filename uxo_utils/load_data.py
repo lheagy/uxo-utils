@@ -1,10 +1,11 @@
 import h5py
 import os
 
-from .imports import code_dir, SensorInfo
+from .imports import data_dir
+from BTInvert import SensorInfo
 
 def load_ordnance_dict(
-    directory=code_dir,
+    directory=data_dir,
     filenames=[
         "ordnance_DoD_UltraTEM_5F_APG.h5",
         "ordnance_DoD_UltraTEM_5F_ISOsmall.h5",
@@ -17,7 +18,7 @@ def load_ordnance_dict(
     ord_dict = {}
 
     for file in filenames:
-        ord_file = os.path.join(code_dir, file)
+        ord_file = os.path.join(data_dir, file)
         f = h5py.File(ord_file, 'r')
         for i in f['ordnance']:
             ord_name = str(f[f'ordnance/{i}/Name'][()][0]).split("'")[1]
@@ -52,7 +53,7 @@ def load_ordnance_dict(
 
 def load_sensor_info(
     filename = os.path.join(
-        code_dir, 'config','sensor_definitions','UltraTEMArrayNA___Default.yaml'
+        data_dir, 'config','sensor_definitions','UltraTEMArrayNA___Default.yaml'
     )
 ):
 

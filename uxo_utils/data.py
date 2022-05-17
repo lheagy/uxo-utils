@@ -54,11 +54,22 @@ def load_ordnance_dict(
 
     return ord_dict
 
-def load_sensor_info(
-    filename = os.path.join(
-        data_dir, 'config','sensor_definitions','UltraTEMArrayNA___Default.yaml'
-    )
-):
+
+def load_sensor_info(sensor="UltraTEM"):
+
+    if sensor.lower() == "ultratem":
+        filename = os.path.join(
+            data_dir, 'config', 'sensor_definitions', 'UltraTEMArrayNA___Default.yaml'
+        )
+    elif "subtem" in sensor.lower():
+        if "rov" in sensor.lower():
+            filename = os.path.join(
+                data_dir, 'config', 'sensor_definitions', 'SubTEM_ROV___Default.yaml'
+            )
+        else:
+            filename = os.path.join(
+                data_dir, 'config', 'sensor_definitions', 'SubTEMSledge___Default.yaml'
+            )
 
     return SensorInfo.fromYAML(filename)[0]
 

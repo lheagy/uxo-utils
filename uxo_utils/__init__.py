@@ -4,3 +4,4 @@ from .modelling import (
     noise_model, simulate_object
 )
 from .parse import proc_attr, proc_group
+from .sensor import CustomSensorInfo

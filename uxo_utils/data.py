@@ -2,6 +2,7 @@ import h5py
 import os
 import numpy as np
 from sklearn.linear_model import LinearRegression
+import warnings
 
 from .imports import data_dir
 from BTInvert import SensorInfo
@@ -88,39 +89,79 @@ def rotate_survey(local_x, local_y):
     model = LinearRegression(fit_intercept=False)
     model.fit(local_x[:, np.newaxis], local_y)
     slope = model.coef_[0]
-    theta = np.arctan(slope)+np.pi/2
+    theta = np.arctan(slope) #+np.pi/2
     rotated_x = np.cos(theta) * local_x + np.sin(theta) * local_y
     rotated_y = -np.sin(theta) * local_x + np.cos(theta) * local_y
-    return slope, rotated_x, rotated_y
+    return theta, slope, rotated_x, rotated_y
+
+def create_survey_from_file(filepath, convert_degrees_to_radians=False):
+    dic = load_h5_data(filepath)
+
+    xyz_dict = dic["XYZ"]
+    xyz_data = xyz_dict["Data"]
+
+    times = np.array(dic['SensorTimes'].flatten())
+
+    def get_index(key):
+        return xyz_dict["Info"][key]["ChannelIndex"].flatten().astype(int)-1
+
+    def get_values(key):
+        index = get_index(key)
+        return xyz_data[index, :].flatten()
+
+    easting = get_values("Easting")
+    northing = get_values("Northing")
+
+    yaw = get_values("Yaw")
+    pitch = get_values("Pitch")
+    roll = get_values("Roll")
+
+    if convert_degrees_to_radians:
+        yaw = yaw*np.pi/180
+        pitch = pitch*np.pi/180
+        roll = roll*np.pi/180
+    else:
+        if not all(np.abs(yaw) < 2*np.pi):
+            warnings.warn("There are yaw values above 2 pi. You might need to convert to radians `convert_degrees_to_radians=True`")
+
+    mnum = get_values("MeasNum").astype(int) - 1 # index from zero in python
+    line = get_values("Line").astype(int)
+    rx_num = get_values("RxNum").astype(int) - 1
+    tx_num = get_values("TxNum").astype(int) - 1
+    rx_comp = get_values("RxCNum").astype(int) - 1
+    data = xyz_data[get_index("Data"), :].T
+    return Survey(data, times, easting, northing, pitch, roll, yaw, mnum, line, rx_num, tx_num, rx_comp)
 
 
 class Survey:
-    def __init__(self, filepath):
-        dic = load_h5_data(filepath)
+    def __init__(
+        self,
+        data,
+        times,
+        easting,
+        northing,
+        pitch,
+        roll,
+        yaw,
+        mnum,
+        line=None,
+        rx_num=None,
+        tx_num=None,
+        rx_comp=None,
+    ):
+    self._data = data
+    self._time = times
+    self._easting = easting
+    self._northing = northing
+    self._pitch = pitch
+    self._roll = roll
+    self._yaw = yaw
+    self._mnum = mnum
+    self._line = line
+    self._rx_num = rx_num
+    self._tx_num = tx_num
+    self._rx_comp = rx_comp
 
-        xyz_dict = dic["XYZ"]
-        xyz_data = xyz_dict["Data"]
-
-        self._times = np.array(dic['SensorTimes'].flatten())
-
-        def get_index(key):
-            return xyz_dict["Info"][key]["ChannelIndex"].flatten().astype(int)-1
-
-        def get_values(key):
-            index = get_index(key)
-            return xyz_data[index, :].flatten()
-
-        self._easting = get_values("Easting")
-        self._northing = get_values("Northing")
-        self._yaw = get_values("Yaw")
-        self._pitch = get_values("Pitch")
-        self._roll = get_values("Roll")
-        self._mnum = get_values("MeasNum").astype(int) - 1 # index from zero in python
-        self._line = get_values("Line").astype(int)
-        self._rx_num = get_values("RxNum").astype(int) - 1
-        self._tx_num = get_values("TxNum").astype(int) - 1
-        self._rx_comp = get_values("RxCNum").astype(int) - 1
-        self._data = xyz_data[get_index("Data"), :].T
 
     # Properties directly from data file
     @property
@@ -187,10 +228,12 @@ class Survey:
         return self._local_y
 
     def _rotate_survey(self):
-        slope, rotated_x, rotated_y = rotate_survey(self.local_x, self.local_y)
+        theta, slope, rotated_x, rotated_y = rotate_survey(self.local_x, self.local_y)
+        self._theta = theta
         self._slope = slope
         self._rotated_x = rotated_x
         self._rotated_y = rotated_y
+        self._rotated_yaw = self.yaw + (np.pi/2 - theta)
 
     @property
     def slope(self):
@@ -209,6 +252,12 @@ class Survey:
         if getattr(self, "_rotated_y", None) is None:
             self._rotate_survey()
         return self._rotated_y
+
+    @property
+    def rotated_yaw(self):
+        if getattr(self, "_rotated_y", None) is None:
+            self._rotate_survey()
+        return self._rotated_yaw
 
     @property
     def unique_lines(self):

@@ -1,32 +1,57 @@
 import numpy as np
 
-from .data import load_ordnance_dict
+from .data import load_ordnance_dict, Survey
 from BTInvert import (
     sensorCoords2RxCoords, preCalcLoopCorners, FModParam, Model, forwardWithQ
 )
 
-
-def create_profile(
+def create_survey(
     sensorinfo,
-    x=0., ymin=0., ymax=3., y_spacing=0.2, z=0.28,
-    pitch=0, roll=0, yaw=0,
+    times,
+    line_length=3,
+    along_line_spacing=0.1,
+    line_spacing=0.5,
+    n_lines=1,
+    starting_point=np.r_[0, 0],
+    z=0.28,
+    pitch=0,
+    roll=0,
+    yaw=0,
 ):
-    domain_y = ymax - ymin
-    ntx = len(sensorinfo.transmitters)
-    dy = y_spacing / ntx
-    nloc = int(np.ceil(domain_y/dy))
-    ncycles = int(nloc/ntx)
 
-    y = np.linspace(ymin, ymax-dy, nloc)
-    x = x * np.ones(nloc)
-    z = z * np.ones(nloc)
+    ntx = len(sensorinfo.transmitters)
+    dy = along_line_spacing / ntx
+    n_along_line = int(np.ceil(line_length/dy))
+    ncycles = int(n_along_line/ntx)
+
+    x_line = starting_point[1] * np.ones(n_along_line)
+    y_line = np.linspace(starting_point[0], line_length+starting_point[0]-dy, n_along_line)
+
+
+    y = [y_line, np.flipud(y_line + dy)] * int(np.ceil(n_lines/2))
+    y = np.hstack(y[:n_lines])
+
+    x = np.kron(
+        np.linspace(starting_point[1], n_lines*line_spacing, n_lines), np.ones(n_along_line)
+    )
+    lines = np.kron(
+        np.arange(n_lines), np.ones(n_along_line, dtype=int)
+    )
+
+    # todo rotate x, y if yaw != 0
+
+    z = z * np.ones(n_along_line*n_lines)
     xyz = np.vstack([x, y, z]).T
 
-    pitch = pitch*np.ones(nloc)
-    roll = roll*np.ones(nloc)
-    yaw = yaw*np.ones(nloc)
+    pitch = pitch*np.ones(n_along_line*n_lines)
+    roll = roll*np.ones(n_along_line*n_lines)
 
-    txnum = np.kron(np.ones(ncycles), np.arange(ntx)) if ntx > 1 else None
+    yaw = [
+        yaw * np.ones(n_along_line), (yaw + np.pi) * np.ones(n_along_line)
+    ] * int(np.ceil(n_lines/2))
+    yaw = np.hstack(yaw[:n_lines])
+
+    txnum = np.kron(np.ones(ncycles*n_lines, dtype=int), np.arange(ntx, dtype=int))
 
     # Convert sensor location coordinates to Rx locations
     pos, mnum = sensorCoords2RxCoords(
@@ -37,12 +62,13 @@ def create_profile(
         pitch = pitch,
         roll = roll,
         yaw = yaw,
-        txnum = txnum
+        txnum = txnum if ntx > 1 else None
     )
 
     pitch = np.concatenate([np.tile(x,pos[i].shape[0]) for i, x in enumerate(pitch)])
     roll = np.concatenate([np.tile(x,pos[i].shape[0]) for i, x in enumerate(roll)])
     yaw = np.concatenate([np.tile(x,pos[i].shape[0]) for i, x in enumerate(yaw)])
+    lines = np.concatenate([np.tile(x,pos[i].shape[0]) for i, x in enumerate(lines)])
 
     if len(pos.shape) > 2:
         pos = np.concatenate(pos, axis=0)
@@ -50,10 +76,21 @@ def create_profile(
         pos = np.atleast_3d(pos).repeat(3, axis=-1)
         pos = np.concatenate(pos, axis=1).T
 
-    if txnum is None:
-        mnum = np.kron(np.ones(ncycles, int), mnum)
+    if ntx == 1:
+        mnum = np.kron(np.ones(ncycles*n_lines, int), mnum)
 
-    return xyz, pos, mnum, pitch, roll, yaw, txnum
+    return {
+        "xyz": xyz,
+        "pos": pos,
+        "mnum": mnum,
+        "pitch": pitch,
+        "roll": roll,
+        "yaw": yaw,
+        "txnum": txnum,
+        "line": lines,
+    }
+
+
 
 def create_forward_modelling_params(
     sensorinfo, times, mnum, pos, pitch, roll, yaw

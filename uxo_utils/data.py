@@ -89,7 +89,7 @@ def rotate_survey(local_x, local_y):
     model = LinearRegression(fit_intercept=False)
     model.fit(local_x[:, np.newaxis], local_y)
     slope = model.coef_[0]
-    theta = np.arctan(slope) #+np.pi/2
+    theta = np.arctan(slope) + np.pi/2
     rotated_x = np.cos(theta) * local_x + np.sin(theta) * local_y
     rotated_y = -np.sin(theta) * local_x + np.cos(theta) * local_y
     return theta, slope, rotated_x, rotated_y
@@ -130,13 +130,12 @@ def create_survey_from_file(filepath, convert_degrees_to_radians=False):
     tx_num = get_values("TxNum").astype(int) - 1
     rx_comp = get_values("RxCNum").astype(int) - 1
     data = xyz_data[get_index("Data"), :].T
-    return Survey(data, times, easting, northing, pitch, roll, yaw, mnum, line, rx_num, tx_num, rx_comp)
+    return Survey(times, easting, northing, pitch, roll, yaw, mnum, data, line, rx_num, tx_num, rx_comp)
 
 
 class Survey:
     def __init__(
         self,
-        data,
         times,
         easting,
         northing,
@@ -144,23 +143,24 @@ class Survey:
         roll,
         yaw,
         mnum,
+        data=None,
         line=None,
         rx_num=None,
         tx_num=None,
         rx_comp=None,
     ):
-    self._data = data
-    self._time = times
-    self._easting = easting
-    self._northing = northing
-    self._pitch = pitch
-    self._roll = roll
-    self._yaw = yaw
-    self._mnum = mnum
-    self._line = line
-    self._rx_num = rx_num
-    self._tx_num = tx_num
-    self._rx_comp = rx_comp
+        self._data = data
+        self._time = times
+        self._easting = easting
+        self._northing = northing
+        self._pitch = pitch
+        self._roll = roll
+        self._yaw = yaw
+        self._mnum = mnum
+        self._line = line
+        self._rx_num = rx_num
+        self._tx_num = tx_num
+        self._rx_comp = rx_comp
 
 
     # Properties directly from data file
@@ -233,7 +233,7 @@ class Survey:
         self._slope = slope
         self._rotated_x = rotated_x
         self._rotated_y = rotated_y
-        self._rotated_yaw = self.yaw + (np.pi/2 - theta)
+        self._rotated_yaw = self.yaw + theta
 
     @property
     def slope(self):

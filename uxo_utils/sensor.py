@@ -13,8 +13,8 @@ class CustomSensorInfo(SensorInfo):
         def make_square(center, length, orientation):
             half_length = length/2
             npoints = 4
-            dim_1 = half_length * np.r_[-1, -1, 1, 1]
-            dim_2 = half_length * np.r_[-1, 1, 1, -1]
+            dim_1 = half_length * np.r_[-1, 1, 1, -1]
+            dim_2 = half_length * np.r_[-1, -1, 1, 1]
 
             if orientation.lower() == "x":
                 loop = np.vstack([
@@ -24,9 +24,9 @@ class CustomSensorInfo(SensorInfo):
                 ])
             elif orientation.lower() == "y":
                 loop = np.vstack([
-                    dim_1 + center[0],
+                    dim_2 + center[0],
                     np.zeros(npoints) + center[1],
-                    dim_2 + center[2]
+                    dim_1 + center[2]
                 ])
             elif orientation.lower() == "z":
                 loop = np.vstack([
@@ -51,7 +51,6 @@ class CustomSensorInfo(SensorInfo):
         # -------- Receivers ------------
         # 3 receivers
         nrx = 3
-        rx_offset = np.r_[0, 0, 0.001]
 
         rx_x_shape = make_square(system_center, rx_width, "x")
         rx_y_shape = make_square(system_center, rx_width, "y")

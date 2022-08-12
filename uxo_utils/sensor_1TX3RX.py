@@ -49,23 +49,23 @@ class Custom1TX3RXSensorInfo(SensorInfo):
             # component = 0 if orientation.lower() == "x" else (1 if orientation.lower() == "y" else 2)
         )
         # -------- Receivers ------------
-        # 3 receivers
+        # 9 receivers
         nrx = 9
 
-        rx_0RXx_shape = make_square(system_center-1.5*rx_width, rx_width, "x")
-        rx_0RXy_shape = make_square(system_center-1.5*rx_width, rx_width, "y")
-        rx_0RXz_shape = make_square(system_center-1.5*rx_width, rx_width, "z")
+        rx_0RXx_shape = make_square(system_center-np.r_[1.5*rx_width, 0, 0], rx_width, "x")
+        rx_0RXy_shape = make_square(system_center-np.r_[1.5*rx_width, 0, 0], rx_width, "y")
+        rx_0RXz_shape = make_square(system_center-np.r_[1.5*rx_width, 0, 0], rx_width, "z")
 
         rx_1RXx_shape = make_square(system_center, rx_width, "x")
         rx_1RXy_shape = make_square(system_center, rx_width, "y")
         rx_1RXz_shape = make_square(system_center, rx_width, "z")
 
-        rx_2RXx_shape = make_square(system_center+1.5*rx_width, rx_width, "x")
-        rx_2RXy_shape = make_square(system_center+1.5*rx_width, rx_width, "y")
-        rx_2RXz_shape = make_square(system_center+1.5*rx_width, rx_width, "z")
+        rx_2RXx_shape = make_square(system_center+np.r_[1.5*rx_width, 0, 0], rx_width, "x")
+        rx_2RXy_shape = make_square(system_center+np.r_[1.5*rx_width, 0, 0], rx_width, "y")
+        rx_2RXz_shape = make_square(system_center+np.r_[1.5*rx_width, 0, 0], rx_width, "z")
 
 
-        RxLoops = np.ndarray(shape = (3), dtype=TxRxLoop)
+        RxLoops = np.ndarray(shape = (9), dtype=TxRxLoop)
 
         RxLoops[0] = TxRxLoop(name = "0",
                                 shape = rx_0RXx_shape,
@@ -85,41 +85,41 @@ class Custom1TX3RXSensorInfo(SensorInfo):
                                 gain = 1.0,
                                 component = 2)
 
-        RxLoops[0] = TxRxLoop(name = "0",
+        RxLoops[3] = TxRxLoop(name = "3",
                                 shape = rx_1RXx_shape,
                                 center = system_center,
                                 gain = 1.0,
-                                component = 0)
+                                component = 3)
 
-        RxLoops[1] = TxRxLoop(name = "1",
+        RxLoops[4] = TxRxLoop(name = "4",
                                 shape = rx_1RXy_shape,
                                 center = system_center,
                                 gain = 1.0,
-                                component = 1)
+                                component = 4)
 
-        RxLoops[2] = TxRxLoop(name = "2",
+        RxLoops[5] = TxRxLoop(name = "5",
                                 shape = rx_1RXz_shape,
                                 center = system_center,
                                 gain = 1.0,
-                                component = 2)
+                                component = 5)
 
-        RxLoops[0] = TxRxLoop(name = "0",
+        RxLoops[6] = TxRxLoop(name = "6",
                                 shape = rx_2RXx_shape,
                                 center = system_center+1.5*rx_width,
                                 gain = 1.0,
-                                component = 0)
+                                component = 6)
 
-        RxLoops[1] = TxRxLoop(name = "1",
+        RxLoops[7] = TxRxLoop(name = "7",
                                 shape = rx_2RXy_shape,
                                 center = system_center+1.5*rx_width,
                                 gain = 1.0,
-                                component = 1)
+                                component = 7)
 
-        RxLoops[2] = TxRxLoop(name = "2",
+        RxLoops[8] = TxRxLoop(name = "8",
                                 shape = rx_2RXz_shape,
                                 center = system_center+1.5*rx_width,
                                 gain = 1.0,
-                                component = 2)
+                                component = 8)
 
 
 

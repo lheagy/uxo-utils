@@ -71,6 +71,11 @@ def load_sensor_info(sensor="UltraTEM"):
             filename = os.path.join(
                 data_dir, 'config', 'sensor_definitions', 'SubTEMSledge___Default.yaml'
             )
+    elif sensor.lower() == "ultratema":
+        filename = os.path.join(
+            data_dir, 'config', 'sensor_definitions', 'UltraTEMA___Default.yaml'
+        )
+
 
     return SensorInfo.fromYAML(filename)[0]
 
